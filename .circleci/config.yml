@@ -12,7 +12,9 @@ jobs:
       - checkout
       - run:
           command: apt-get update -y && apt-get install -y git-crypt
+      - run:
           command: echo $GPG_KEY > key.gpg
+      - run:
           command: echo $GPG_PASSPHRASE | gpg --batch --yes --passphrase-fd 0 key.gpg
   build:
     docker:
