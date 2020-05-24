@@ -15,7 +15,7 @@ jobs:
       - run:
           command: echo $GPG_KEY | base64 -d > key.gpg
       - run:
-          command: gpg --pinentry-mode loopback --passphrase $GPG_PASSPHRASE --import key.gpg
+          command: gpg --pinentry-mode loopback --passphrase $GPG_PASSPHRASE --allow-secret-key-import --import key.gpg
       - run:
           command: git-crypt unlock
   build:
