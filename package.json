@@ -14,13 +14,7 @@
     "build": "babel . -d build --source-maps --ignore build,node_modules,test && cp package.json yarn.lock ./build",
     "babel-node": "babel-node",
     "watch": "nodemon --exec yarn run babel-node -- $npm_package_main | pino",
-    "start": "node $npm_package_main",
-    "encrypt:prod": "gcloud --project daily-ops kms encrypt --plaintext-file=./helm/values/prod.yaml --ciphertext-file=./helm/values/prod.yaml.enc --location=global --keyring=daily-ci --key=daily-gateway-ci"
-  },
-  "husky": {
-    "hooks": {
-      "pre-commit": "yarn encrypt:prod && git add helm/values/prod.yaml.enc"
-    }
+    "start": "node $npm_package_main"
   },
   "repository": {
     "type": "git",
@@ -65,7 +59,6 @@
     "eslint-plugin-chai-friendly": "^0.4.0",
     "eslint-plugin-import": "^2.7.0",
     "eslint-plugin-mocha": "^4.11.0",
-    "husky": "^1.0.0-rc.14",
     "knex-cleaner": "^1.1.4",
     "mocha": "^6.2.0",
     "mocha-junit-reporter": "^1.23.0",

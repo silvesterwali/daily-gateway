@@ -5,6 +5,12 @@ orbs:
   gcp-cli: circleci/gcp-cli@1.8.1
 
 jobs:
+  secrets:
+    machine: true
+    steps:
+      - checkout
+      - run:
+          command: apt-get update -y && apt-get install git-crypt
   build:
     docker:
       - image: circleci/node:12.14.1
@@ -91,6 +97,8 @@ jobs:
 workflows:
   build:
     jobs:
+      - secrets:
+          context: GPG
       - build
       - build_and_push_docker:
           requires:
