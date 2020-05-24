@@ -13,9 +13,11 @@ jobs:
       - run:
           command: apt-get update -y && apt-get install -y git-crypt
       - run:
-          command: echo $GPG_KEY > key.gpg
+          command: echo $GPG_KEY | base64 -d > key.gpg
       - run:
           command: gpg --pinentry-mode loopback --passphrase $GPG_PASSPHRASE --import key.gpg
+      - run:
+          command: git-crypt unlock
   build:
     docker:
       - image: circleci/node:12.14.1
