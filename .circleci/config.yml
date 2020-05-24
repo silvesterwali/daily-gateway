@@ -15,7 +15,7 @@ jobs:
       - run:
           command: echo $GPG_KEY > key.gpg
       - run:
-          command: echo $GPG_PASSPHRASE | gpg --batch --yes --passphrase-fd 0 --import key.gpg
+          command: Any gpg --pinentry-mode loopback --passphrase $GPG_PASSPHRASE --import key.gpg
   build:
     docker:
       - image: circleci/node:12.14.1
