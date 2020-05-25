@@ -11,13 +11,20 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Install git-crypt
           command: apt-get update -y && apt-get install -y git-crypt
       - run:
-          command: echo $GPG_KEY | base64 -d > key.gpg
+          name: Import GPG key
+          command: echo $GPG_KEY | base64 -d > key.gpg && gpg --pinentry-mode loopback --passphrase $GPG_PASSPHRASE --allow-secret-key-import --import key.gpg && rm key.gpg
       - run:
-          command: gpg --pinentry-mode loopback --passphrase $GPG_PASSPHRASE --allow-secret-key-import --import key.gpg
+          name: Trust ultimately key
+          command: echo -e "5\ny\n" | gpg --command-fd 0 --expert --edit-key $GPG_FINGERPRINT trust;
       - run:
-          command: git-crypt unlock
+          name: Decrypt manually git-crypt key
+          command: gpg --pinentry-mode loopback --passphrase $GPG_PASSPHRASE --decrypt ./.git-crypt/keys/default/0/$GPG_FINGERPRINT.gpg -o ./.git-crypt/keys/default/0/decrypted.gpg
+      - run:
+          name: Unlock the secrets
+          command: git-crypt unlock .git-crypt/keys/default/0/decrypted.gpg
   build:
     docker:
       - image: circleci/node:12.14.1
