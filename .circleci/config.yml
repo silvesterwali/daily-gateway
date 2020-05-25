@@ -21,7 +21,7 @@ jobs:
           command: echo -e "5\ny\n" | gpg --command-fd 0 --expert --edit-key $GPG_FINGERPRINT trust;
       - run:
           name: Decrypt manually git-crypt key
-          command: gpg --pinentry-mode loopback --passphrase $GPG_PASSPHRASE --decrypt ./.git-crypt/keys/default/0/$GPG_FINGERPRINT.gpg -o ./.git-crypt/keys/default/0/decrypted.gpg
+          command: gpg --pinentry-mode loopback --passphrase $GPG_PASSPHRASE --decrypt ./.git-crypt/keys/default/0/$GPG_FINGERPRINT.gpg > ./.git-crypt/keys/default/0/decrypted.gpg
       - run:
           name: Unlock the secrets
           command: git-crypt unlock .git-crypt/keys/default/0/decrypted.gpg
