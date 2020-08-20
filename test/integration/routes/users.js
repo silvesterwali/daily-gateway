@@ -87,7 +87,7 @@ describe('users routes', () => {
         email: 'email@foo.com',
         infoConfirmed: false,
         premium: false,
-        acceptedMarketing: false,
+        acceptedMarketing: true,
       });
     });
   });
@@ -222,12 +222,12 @@ describe('users routes', () => {
         .set('Cookie', [`da3=${accessToken.token}`])
         .set('Content-Type', 'application/json')
         .send({
-          name: 'John', email: 'john@acme.com', company: 'ACME', title: 'Developer', acceptedMarketing: false,
+          name: 'John', email: 'john@acme.com', company: 'ACME', title: 'Developer', acceptedMarketing: true,
         })
         .expect(200);
 
       expect(res.body).to.deep.equal({
-        id: 'id', name: 'John', email: 'john@acme.com', company: 'ACME', title: 'Developer', infoConfirmed: true, premium: false, acceptedMarketing: false,
+        id: 'id', name: 'John', email: 'john@acme.com', company: 'ACME', title: 'Developer', infoConfirmed: true, premium: false, acceptedMarketing: true,
       });
     });
 

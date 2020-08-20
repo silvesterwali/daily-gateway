@@ -38,7 +38,7 @@ describe('user model', () => {
     expect(model).to.deep.equal(Object.assign({}, fixture[0], {
       infoConfirmed: false,
       premium: false,
-      acceptedMarketing: false,
+      acceptedMarketing: true,
     }));
   });
 
@@ -49,7 +49,7 @@ describe('user model', () => {
     expect(model).to.deep.equal(Object.assign({}, fixture[2], {
       infoConfirmed: false,
       premium: false,
-      acceptedMarketing: false,
+      acceptedMarketing: true,
     }));
   });
 });
