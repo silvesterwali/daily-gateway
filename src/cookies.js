@@ -11,8 +11,8 @@ export const addSubdomainOpts = (ctx, opts) => {
   return Object.assign({}, opts, { domain });
 };
 
-export const setAuthCookie = async (ctx, user) => {
-  const accessToken = await signJwt({ userId: user.id, premium: user.premium }, null);
+export const setAuthCookie = async (ctx, user, roles = []) => {
+  const accessToken = await signJwt({ userId: user.id, premium: user.premium, roles }, null);
   ctx.cookies.set(
     config.cookies.auth.key, accessToken.token,
     addSubdomainOpts(ctx, config.cookies.auth.opts),

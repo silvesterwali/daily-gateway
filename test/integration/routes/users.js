@@ -88,6 +88,75 @@ describe('users routes', () => {
         infoConfirmed: false,
         premium: false,
         acceptedMarketing: true,
+        roles: [],
+      });
+    });
+
+    it('should return profile with roles', async () => {
+      nock('https://github.com')
+        .post('/login/oauth/access_token', body => body.code === 'code')
+        .reply(200, { access_token: 'token' });
+
+      nock('https://api.github.com', {
+        reqheaders: {
+          Authorization: 'token token',
+          'User-Agent': 'Daily',
+        },
+      })
+        .get('/user/public_emails')
+        .reply(200, [{ email: 'email@foo.com' }]);
+
+      nock('https://api.github.com', {
+        reqheaders: {
+          Authorization: 'token token',
+          'User-Agent': 'Daily',
+        },
+      })
+        .get('/user')
+        .reply(200, { id: 'github_id', name: 'user', avatar_url: 'https://avatar.com' });
+
+      const code = await sign({ providerCode: 'code', provider: 'github' });
+      const { body } = await request
+        .post('/v1/auth/github/authenticate')
+        .send({ code: code.token })
+        .expect(200);
+
+      nock('https://api.github.com', {
+        reqheaders: {
+          Authorization: 'token token',
+          'User-Agent': 'Daily',
+        },
+      })
+        .get('/user/public_emails')
+        .reply(200, [{ email: 'email@foo.com' }]);
+
+      nock('https://api.github.com', {
+        reqheaders: {
+          Authorization: 'token token',
+          'User-Agent': 'Daily',
+        },
+      })
+        .get('/user')
+        .reply(200, { id: 'github_id', name: 'user', avatar_url: 'https://avatar.com' });
+
+      await role.add(body.id, 'admin');
+      await role.add(body.id, 'moderator');
+
+      const res = await request
+        .get('/v1/users/me')
+        .set('Authorization', `Bearer ${body.accessToken}`)
+        .expect(200);
+
+      expect(res.body).to.deep.equal({
+        id: body.id,
+        providers: ['github'],
+        name: 'user',
+        image: 'https://avatar.com',
+        email: 'email@foo.com',
+        infoConfirmed: false,
+        premium: false,
+        acceptedMarketing: true,
+        roles: ['admin', 'moderator'],
       });
     });
   });

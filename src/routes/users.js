@@ -27,9 +27,10 @@ router.get(
       const { userId } = ctx.state.user;
       visitId = userId;
 
-      const [user, userProvider] = await Promise.all([
+      const [user, userProvider, roles] = await Promise.all([
         userModel.getById(userId),
         provider.getByUserId(userId),
+        role.getByUserId(userId),
       ]);
       if (!user) {
         setTrackingId(ctx, null);
@@ -38,11 +39,11 @@ router.get(
 
       if (!ctx.userAgent.isBot && !ctx.state.service) {
         // Refresh the auth cookie
-        await setAuthCookie(ctx, user);
+        await setAuthCookie(ctx, user, roles);
       }
 
       ctx.status = 200;
-      ctx.body = Object.assign({}, user, { providers: [userProvider.provider] });
+      ctx.body = Object.assign({}, user, { providers: [userProvider.provider], roles });
     } else if (trackingId && trackingId.length) {
       visitId = trackingId;
       ctx.status = 200;
