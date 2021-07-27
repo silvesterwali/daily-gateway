@@ -2,6 +2,8 @@ config:
   gateway:env:
     accessSecret:
       secure: AAABAOgGOPp2psPjjfgQHY7iQdsYdarlUFcI2qUSUSDhljnLHuXjuQc0qDG0mRbgVI0dXFkX0aTlRZ5+68zacA==
+    amplitudeKey:
+      secure: AAABAHjka2+Ii8cxUjvBlXSOI/g7wR4kKQc/BFYJi/LBEOba5fw6yvDRhW9xOCXveCgBtnr5Uy7avr/k6ykTJQ==
     apiSecret:
       secure: AAABAHQnHsfEQMSAZQTxPGaQDcrBRcfzyt0k+QSgtkLpYyDea1jkA20rW+VsbtDDY8jndj21NIiTJVws+6OjYA==
     apiUrl:

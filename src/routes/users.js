@@ -13,7 +13,7 @@ import role from '../models/role';
 import visit from '../models/visit';
 import { getTrackingId, setTrackingId } from '../tracking';
 import config from '../config';
-import { setAuthCookie, addSubdomainOpts } from '../cookies';
+import { setAuthCookie, addSubdomainOpts, getAmplitudeCookie } from '../cookies';
 import { publishEvent, userUpdatedTopic } from '../pubsub';
 import upload from '../upload';
 import { uploadAvatar } from '../cloudinary';
@@ -61,7 +61,12 @@ router.get(
 
       ctx.status = 200;
       ctx.body = {
-        ...user, providers: [userProvider.provider], roles, permalink: `${config.webappOrigin}/${user.username || user.id}`, accessToken,
+        ...user,
+        providers: [userProvider.provider],
+        roles,
+        permalink: `${config.webappOrigin}/${user.username || user.id}`,
+        accessToken,
+        ampStorage: getAmplitudeCookie(ctx),
       };
       if (!user.infoConfirmed) {
         ctx.body = {
@@ -71,7 +76,7 @@ router.get(
     } else if (trackingId && trackingId.length) {
       visitId = trackingId;
       ctx.status = 200;
-      ctx.body = { id: trackingId };
+      ctx.body = { id: trackingId, ampStorage: getAmplitudeCookie(ctx) };
     } else {
       throw new ForbiddenError();
     }

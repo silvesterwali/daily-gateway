@@ -117,6 +117,7 @@ const config = {
     secret: process.env.REFRESH_TOKEN_SECRET || 'topsecret',
     salt: process.env.REFRESH_TOKEN_SALT || 'salt',
   },
+  amplitudeKey: process.env.AMPLITUDE_KEY,
 };
 
 export default config;
