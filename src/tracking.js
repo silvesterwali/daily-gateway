@@ -1,6 +1,6 @@
-import shortid from 'shortid';
 import config from './config';
 import { addSubdomainOpts } from './cookies';
+import generateId from './generateId';
 
 export const setTrackingId = (ctx, id) => {
   ctx.trackingId = id;
@@ -25,7 +25,7 @@ export default function verifyTracking(ctx, next) {
       // eslint-disable-next-line prefer-destructuring
       userId = ctx.state.user.userId;
     } else if (!userId || !userId.length) {
-      userId = shortid.generate();
+      userId = generateId();
     }
 
     if (userId !== getTrackingId(ctx)) {

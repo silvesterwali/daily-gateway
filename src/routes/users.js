@@ -11,12 +11,13 @@ import userModel from '../models/user';
 import refreshTokenModel from '../models/refreshToken';
 import role from '../models/role';
 import visit from '../models/visit';
-import { getTrackingId, setTrackingId } from '../tracking';
+import { setTrackingId } from '../tracking';
 import config from '../config';
 import { setAuthCookie, addSubdomainOpts, getAmplitudeCookie } from '../cookies';
 import { publishEvent, userUpdatedTopic } from '../pubsub';
 import upload from '../upload';
 import { uploadAvatar } from '../cloudinary';
+import generateId from '../generateId';
 
 const updateUser = async (userId, user, newProfile) => {
   await userModel.update(userId, newProfile);
@@ -30,8 +31,7 @@ const router = Router({
 router.get(
   '/me',
   async (ctx) => {
-    let visitId;
-    const trackingId = getTrackingId(ctx);
+    const { trackingId } = ctx;
     const refreshToken = ctx.cookies.get(config.cookies.refreshToken.key);
     let shouldRefreshToken = false;
     if (refreshToken) {
@@ -43,9 +43,12 @@ router.get(
         throw new ForbiddenError();
       }
     }
+    if (!trackingId || !trackingId.length) {
+      throw new ForbiddenError();
+    }
+    const visitId = generateId();
     if (ctx.state.user) {
       const { userId } = ctx.state.user;
-      visitId = userId;
 
       const [user, userProvider, roles] = await Promise.all([
         userModel.getById(userId),
@@ -67,25 +70,23 @@ router.get(
         permalink: `${config.webappOrigin}/${user.username || user.id}`,
         accessToken,
         ampStorage: getAmplitudeCookie(ctx),
+        visitId,
       };
       if (!user.infoConfirmed) {
         ctx.body = {
           ...ctx.body, registrationLink: `${config.webappOrigin}/register`,
         };
       }
-    } else if (trackingId && trackingId.length) {
-      visitId = trackingId;
-      ctx.status = 200;
-      ctx.body = { id: trackingId, ampStorage: getAmplitudeCookie(ctx) };
     } else {
-      throw new ForbiddenError();
+      ctx.status = 200;
+      ctx.body = { id: trackingId, ampStorage: getAmplitudeCookie(ctx), visitId };
     }
 
     const app = ctx.request.get('app');
     if (app === 'extension' || app === 'web') {
       const referral = ctx.cookies.get(config.cookies.referral.key, config.cookies.referral.opts);
-      visit.upsert(visitId, app, new Date(), new Date(), referral, ctx.request.ip)
-        .catch((err) => ctx.log.error({ err }, `failed to update visit for ${visitId}`));
+      visit.upsert(trackingId, app, new Date(), new Date(), referral, ctx.request.ip)
+        .catch((err) => ctx.log.error({ err }, `failed to update visit for ${trackingId}`));
     }
   },
 );
