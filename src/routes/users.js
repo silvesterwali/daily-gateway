@@ -43,9 +43,7 @@ router.get(
         throw new ForbiddenError();
       }
     }
-    if (!trackingId || !trackingId.length) {
-      throw new ForbiddenError();
-    }
+
     const visitId = generateId();
     if (ctx.state.user) {
       const { userId } = ctx.state.user;
