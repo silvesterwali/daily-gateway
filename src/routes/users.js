@@ -11,7 +11,7 @@ import userModel from '../models/user';
 import refreshTokenModel from '../models/refreshToken';
 import role from '../models/role';
 import visit from '../models/visit';
-import { setTrackingId } from '../tracking';
+import { setSessionId, setTrackingId } from '../tracking';
 import config from '../config';
 import { setAuthCookie, addSubdomainOpts, getAmplitudeCookie } from '../cookies';
 import { publishEvent, userUpdatedTopic } from '../pubsub';
@@ -45,6 +45,19 @@ router.get(
     }
 
     const visitId = generateId();
+    if (!ctx.userAgent.isBot && !ctx.state.service) {
+      if (!ctx.sessionId || !ctx.sessionId.length) {
+        ctx.sessionId = generateId();
+      }
+      // Refresh session cookie
+      setSessionId(ctx, ctx.sessionId);
+    }
+
+    const baseResponse = {
+      ampStorage: getAmplitudeCookie(ctx),
+      visitId,
+      sessionId: ctx.sessionId,
+    };
     if (ctx.state.user) {
       const { userId } = ctx.state.user;
 
@@ -67,8 +80,7 @@ router.get(
         roles,
         permalink: `${config.webappOrigin}/${user.username || user.id}`,
         accessToken,
-        ampStorage: getAmplitudeCookie(ctx),
-        visitId,
+        ...baseResponse,
       };
       if (!user.infoConfirmed) {
         ctx.body = {
@@ -77,7 +89,7 @@ router.get(
       }
     } else {
       ctx.status = 200;
-      ctx.body = { id: trackingId, ampStorage: getAmplitudeCookie(ctx), visitId };
+      ctx.body = { id: trackingId, ...baseResponse };
     }
 
     const app = ctx.request.get('app');

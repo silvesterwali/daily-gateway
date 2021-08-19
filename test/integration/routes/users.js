@@ -99,6 +99,7 @@ describe('users routes', () => {
         registrationLink: 'http://localhost:5002/register',
         referralLink: `https://api.daily.dev/get?r=${res.body.id}`,
         visitId: res.body.visitId,
+        sessionId: res.body.sessionId,
       });
     });
 
@@ -174,6 +175,7 @@ describe('users routes', () => {
         registrationLink: 'http://localhost:5002/register',
         referralLink: `https://api.daily.dev/get?r=${res.body.id}`,
         visitId: res.body.visitId,
+        sessionId: res.body.sessionId,
       });
     });
 

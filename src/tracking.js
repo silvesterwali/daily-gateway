@@ -18,6 +18,22 @@ export const getTrackingId = (ctx) => {
   return ctx.trackingId;
 };
 
+export const setSessionId = (ctx, id) => {
+  ctx.sessionId = id;
+  ctx.cookies.set(
+    config.cookies.session.key, id,
+    addSubdomainOpts(ctx, config.cookies.session.opts),
+  );
+};
+
+export const getSessionId = (ctx) => {
+  if (!ctx.sessionId || !ctx.sessionId.length) {
+    ctx.sessionId = ctx.cookies.get(config.cookies.session.key, config.cookies.session.opts);
+  }
+
+  return ctx.sessionId;
+};
+
 export default function verifyTracking(ctx, next) {
   if (!ctx.userAgent.isBot && !ctx.state.service) {
     let userId = getTrackingId(ctx);
@@ -31,6 +47,9 @@ export default function verifyTracking(ctx, next) {
     if (userId !== getTrackingId(ctx)) {
       setTrackingId(ctx, userId);
     }
+
+    ctx.sessionId = getSessionId(ctx);
+
     ctx.request.headers['user-id'] = userId;
   }
   return next();

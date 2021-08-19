@@ -39,6 +39,17 @@ const config = {
       },
       key: 'da2',
     },
+    session: {
+      opts: {
+        maxAge: 1000 * 60 * 30,
+        overwrite: true,
+        httpOnly: false,
+        signed: false,
+        secure: false,
+        sameSite: 'lax',
+      },
+      key: 'das',
+    },
     auth: {
       opts: {
         maxAge: 1000 * 60 * 15,
