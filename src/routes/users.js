@@ -101,8 +101,8 @@ const getMeBaseResponse = async (ctx, visitId, visitPromise, now, referral, user
 router.get(
   '/me',
   async (ctx) => {
-    const { trackingId } = ctx;
     const shouldRefreshToken = await validateRefreshToken(ctx);
+    const trackingId = ctx.state?.user?.userId || ctx.trackingId;
 
     const visitId = generateId();
     generateSessionId(ctx);
