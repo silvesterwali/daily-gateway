@@ -65,7 +65,7 @@ const updateUserVisit = (ctx, now, referral) => {
 const getTimeOrMax = (time) => time?.getTime?.() || Number.MAX_VALUE;
 
 const getMeBaseResponse = async (ctx, visitId, visitPromise, now, referral, user = null) => {
-  const visitObject = await visitPromise;
+  const visitObject = visitPromise ? await visitPromise : null;
   const baseResponse = {
     ampStorage: getAmplitudeCookie(ctx),
     visitId,
@@ -107,7 +107,7 @@ router.get(
     const visitId = generateId();
     generateSessionId(ctx);
     const now = new Date();
-    const visitPromise = visit.getFirstVisitAndReferral(trackingId);
+    const visitPromise = trackingId && visit.getFirstVisitAndReferral(trackingId);
     const referral = ctx.cookies.get(config.cookies.referral.key, config.cookies.referral.opts);
     if (ctx.state.user) {
       const { userId } = ctx.state.user;
