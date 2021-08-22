@@ -23,7 +23,17 @@ const upsert = (userId, app, visitedAt, firstVisit, referral, ip) => {
     .then(() => obj);
 };
 
+const getFirstVisitAndReferral = (userId) => db.select('first_visit', 'users.id as referral').from(table)
+  .leftJoin('users', (builder) => {
+    builder.on('users.id', '=', `${table}.referral`).orOn('users.username', '=', `${table}.referral`);
+  })
+  .where('user_id', '=', userId)
+  .orderBy('first_visit', 'ASC')
+  .then((res) => res.map(toCamelCase))
+  .then((rows) => (rows.length ? rows[0] : null));
+
 export default {
   get,
   upsert,
+  getFirstVisitAndReferral,
 };

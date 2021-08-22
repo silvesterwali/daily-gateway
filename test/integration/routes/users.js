@@ -10,6 +10,7 @@ import provider from '../../../src/models/provider';
 import refreshTokenModel from '../../../src/models/refreshToken';
 import { sign } from '../../../src/jwt';
 import { generateChallenge } from '../../../src/auth';
+import visit from '../../../src/models/visit';
 
 describe('users routes', () => {
   let request;
@@ -100,6 +101,7 @@ describe('users routes', () => {
         referralLink: `https://api.daily.dev/get?r=${res.body.id}`,
         visitId: res.body.visitId,
         sessionId: res.body.sessionId,
+        firstVisit: res.body.firstVisit,
       });
     });
 
@@ -176,6 +178,7 @@ describe('users routes', () => {
         referralLink: `https://api.daily.dev/get?r=${res.body.id}`,
         visitId: res.body.visitId,
         sessionId: res.body.sessionId,
+        firstVisit: res.body.firstVisit,
       });
     });
 
@@ -213,6 +216,58 @@ describe('users routes', () => {
         .get('/v1/users/me')
         .set('Cookie', ['da5=refresh'])
         .expect(403);
+    });
+
+    it('should return first visit time and referral', async () => {
+      await db.insert({
+        id: '1',
+        name: 'John',
+        email: 'john@acme.com',
+        image: 'https://acme.com/john.png',
+        title: 'Developer',
+        company: 'ACME',
+        username: 'john',
+      }).into('users');
+      const date1 = new Date('2020-01-21T21:44:16Z');
+      const date2 = new Date('2020-01-21T21:45:16Z');
+      await visit.upsert('123', 'app', date2, date1, 'john', '');
+
+      const res = await request
+        .get('/v1/users/me')
+        .set('Cookie', ['da2=123'])
+        .expect(200);
+
+      expect(res.body).to.deep.equal({
+        id: '123',
+        firstVisit: '2020-01-21T21:44:16.000Z',
+        referrer: '1',
+        visitId: res.body.visitId,
+        sessionId: res.body.sessionId,
+      });
+    });
+
+    it('should return first visit time and referral when visit entry does not exist', async () => {
+      await db.insert({
+        id: '1',
+        name: 'John',
+        email: 'john@acme.com',
+        image: 'https://acme.com/john.png',
+        title: 'Developer',
+        company: 'ACME',
+        username: 'john',
+      }).into('users');
+      const res = await request
+        .get('/v1/users/me')
+        .set('Cookie', ['da2=123;da4=john'])
+        .expect(200);
+
+      expect(res.body).to.deep.equal({
+        id: '123',
+        firstVisit: res.body.firstVisit,
+        referrer: '1',
+        visitId: res.body.visitId,
+        sessionId: res.body.sessionId,
+      });
     });
   });
 

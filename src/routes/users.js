@@ -28,36 +28,81 @@ const router = Router({
   prefix: '/users',
 });
 
+const validateRefreshToken = async (ctx) => {
+  const refreshToken = ctx.cookies.get(config.cookies.refreshToken.key);
+  let shouldRefreshToken = false;
+  if (refreshToken) {
+    const refreshTokenObject = await refreshTokenModel.getByToken(refreshToken);
+    if (refreshTokenObject) {
+      shouldRefreshToken = true;
+      ctx.state.user = { userId: refreshTokenObject.userId };
+    } else {
+      throw new ForbiddenError();
+    }
+  }
+  return shouldRefreshToken;
+};
+
+const generateSessionId = (ctx) => {
+  if (!ctx.userAgent.isBot && !ctx.state.service) {
+    if (!ctx.sessionId || !ctx.sessionId.length) {
+      ctx.sessionId = generateId();
+    }
+    // Refresh session cookie
+    setSessionId(ctx, ctx.sessionId);
+  }
+};
+
+const updateUserVisit = (ctx, now, referral) => {
+  const { trackingId } = ctx;
+  const app = ctx.request.get('app');
+  if (app === 'extension' || app === 'web') {
+    visit.upsert(trackingId, app, now, now, referral, ctx.request.ip)
+      .catch((err) => ctx.log.error({ err }, `failed to update visit for ${trackingId}`));
+  }
+};
+
+const getMeBaseResponse = async (ctx, visitId, visitPromise, now, referral) => {
+  const visitObject = await visitPromise;
+  const baseResponse = {
+    ampStorage: getAmplitudeCookie(ctx),
+    visitId,
+    sessionId: ctx.sessionId,
+  };
+  if (visitObject) {
+    return {
+      ...baseResponse,
+      firstVisit: visitObject.firstVisit,
+      referrer: visitObject.referral,
+    };
+  }
+  if (referral) {
+    const referrer = await userModel.getByIdOrUsername(referral);
+    if (referrer) {
+      return {
+        ...baseResponse,
+        firstVisit: now,
+        referrer: referrer.id,
+      };
+    }
+  }
+  return {
+    ...baseResponse,
+    firstVisit: now,
+  };
+};
+
 router.get(
   '/me',
   async (ctx) => {
     const { trackingId } = ctx;
-    const refreshToken = ctx.cookies.get(config.cookies.refreshToken.key);
-    let shouldRefreshToken = false;
-    if (refreshToken) {
-      const refreshTokenObject = await refreshTokenModel.getByToken(refreshToken);
-      if (refreshTokenObject) {
-        shouldRefreshToken = true;
-        ctx.state.user = { userId: refreshTokenObject.userId };
-      } else {
-        throw new ForbiddenError();
-      }
-    }
+    const shouldRefreshToken = await validateRefreshToken(ctx);
 
     const visitId = generateId();
-    if (!ctx.userAgent.isBot && !ctx.state.service) {
-      if (!ctx.sessionId || !ctx.sessionId.length) {
-        ctx.sessionId = generateId();
-      }
-      // Refresh session cookie
-      setSessionId(ctx, ctx.sessionId);
-    }
-
-    const baseResponse = {
-      ampStorage: getAmplitudeCookie(ctx),
-      visitId,
-      sessionId: ctx.sessionId,
-    };
+    generateSessionId(ctx);
+    const now = new Date();
+    const visitPromise = visit.getFirstVisitAndReferral(trackingId);
+    const referral = ctx.cookies.get(config.cookies.referral.key, config.cookies.referral.opts);
     if (ctx.state.user) {
       const { userId } = ctx.state.user;
 
@@ -80,7 +125,7 @@ router.get(
         roles,
         permalink: `${config.webappOrigin}/${user.username || user.id}`,
         accessToken,
-        ...baseResponse,
+        ...(await getMeBaseResponse(ctx, visitId, visitPromise, now, referral)),
       };
       if (!user.infoConfirmed) {
         ctx.body = {
@@ -89,15 +134,11 @@ router.get(
       }
     } else {
       ctx.status = 200;
-      ctx.body = { id: trackingId, ...baseResponse };
+      const base = await getMeBaseResponse(ctx, visitId, visitPromise, now, referral);
+      ctx.body = { id: trackingId, ...base };
     }
 
-    const app = ctx.request.get('app');
-    if (app === 'extension' || app === 'web') {
-      const referral = ctx.cookies.get(config.cookies.referral.key, config.cookies.referral.opts);
-      visit.upsert(trackingId, app, new Date(), new Date(), referral, ctx.request.ip)
-        .catch((err) => ctx.log.error({ err }, `failed to update visit for ${trackingId}`));
-    }
+    updateUserVisit(ctx, now, referral);
   },
 );
 
