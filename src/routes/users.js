@@ -62,7 +62,9 @@ const updateUserVisit = (ctx, now, referral) => {
   }
 };
 
-const getMeBaseResponse = async (ctx, visitId, visitPromise, now, referral) => {
+const getTimeOrMax = (time) => time?.getTime?.() || Number.MAX_VALUE;
+
+const getMeBaseResponse = async (ctx, visitId, visitPromise, now, referral, user = null) => {
   const visitObject = await visitPromise;
   const baseResponse = {
     ampStorage: getAmplitudeCookie(ctx),
@@ -70,9 +72,13 @@ const getMeBaseResponse = async (ctx, visitId, visitPromise, now, referral) => {
     sessionId: ctx.sessionId,
   };
   if (visitObject) {
+    const firstVisitEpoch = Math.min(
+      getTimeOrMax(visitObject?.firstVisit),
+      getTimeOrMax(user?.createdAt),
+    );
     return {
       ...baseResponse,
-      firstVisit: visitObject.firstVisit,
+      firstVisit: firstVisitEpoch < Number.MAX_VALUE ? new Date(firstVisitEpoch) : undefined,
       referrer: visitObject.referral,
     };
   }
@@ -125,7 +131,7 @@ router.get(
         roles,
         permalink: `${config.webappOrigin}/${user.username || user.id}`,
         accessToken,
-        ...(await getMeBaseResponse(ctx, visitId, visitPromise, now, referral)),
+        ...(await getMeBaseResponse(ctx, visitId, visitPromise, now, referral, user)),
       };
       if (!user.infoConfirmed) {
         ctx.body = {
