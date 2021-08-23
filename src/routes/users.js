@@ -53,8 +53,10 @@ const generateSessionId = (ctx) => {
   }
 };
 
-const updateUserVisit = async (ctx, now, referral) => {
-  const { trackingId } = ctx;
+const updateUserVisit = async (ctx, now, referral, trackingId) => {
+  if (!trackingId) {
+    return;
+  }
   const app = ctx.request.get('app');
   if (app === 'extension' || app === 'web') {
     const referrer = referral ? await userModel.getByIdOrUsername(referral) : {};
@@ -144,7 +146,7 @@ router.get(
       ctx.body = { id: trackingId, ...base };
     }
 
-    updateUserVisit(ctx, now, referral)
+    updateUserVisit(ctx, now, referral, trackingId)
       .catch((err) => ctx.log.error({ err }, `failed to update visit for ${trackingId}`));
   },
 );
