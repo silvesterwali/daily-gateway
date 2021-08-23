@@ -1,6 +1,7 @@
 import { messageToJson, participantEligilbleTopic, publishEvent } from '../pubsub';
 import userModel from '../models/user';
 import contestModel from '../models/contest';
+import visit from '../models/visit';
 
 const worker = {
   topic: 'user-registered',
@@ -8,9 +9,10 @@ const worker = {
   handler: async (message, log) => {
     const newUser = messageToJson(message);
     try {
-      if (newUser.referral) {
+      const visitObj = await visit.getFirstVisitAndReferral(newUser.id);
+      if (visitObj?.referral) {
         const [referredUser, contest] = await Promise.all([
-          userModel.getByIdOrUsername(newUser.referral),
+          userModel.getById(visitObj.referral),
           contestModel.getOngoingContest(),
         ]);
         if (referredUser && contest) {
