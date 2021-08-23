@@ -230,7 +230,7 @@ describe('users routes', () => {
       }).into('users');
       const date1 = new Date('2020-01-21T21:44:16Z');
       const date2 = new Date('2020-01-21T21:45:16Z');
-      await visit.upsert('123', 'app', date2, date1, 'john', '');
+      await visit.upsert('123', 'app', date2, date1, '1', '');
 
       const res = await request
         .get('/v1/users/me')

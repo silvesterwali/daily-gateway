@@ -39,27 +39,9 @@ describe('visit model', () => {
     expect(expected2).to.deep.equal({ visitedAt: date2, firstVisit: date1, referral: 'ido' });
   });
 
-  it('should return first visit and empty referral', async () => {
-    const date1 = new Date('2020-01-21T21:44:16');
-    await visit.upsert('1', 'app', date1, date1, 'ido');
-    const date2 = new Date('2020-01-21T21:45:16');
-    await visit.upsert('1', 'webapp', date2, date2);
-    const expected = await visit.getFirstVisitAndReferral('1');
-    expect(expected).to.deep.equal({ firstVisit: date1, referral: null });
-  });
-
   it('should return first visit and referral by id', async () => {
     const date1 = new Date('2020-01-21T21:44:16');
     await visit.upsert('1', 'app', date1, date1, '2');
-    const date2 = new Date('2020-01-21T21:45:16');
-    await visit.upsert('1', 'webapp', date2, date2);
-    const expected = await visit.getFirstVisitAndReferral('1');
-    expect(expected).to.deep.equal({ firstVisit: date1, referral: '2' });
-  });
-
-  it('should return first visit and referral by username', async () => {
-    const date1 = new Date('2020-01-21T21:44:16');
-    await visit.upsert('1', 'app', date1, date1, 'john');
     const date2 = new Date('2020-01-21T21:45:16');
     await visit.upsert('1', 'webapp', date2, date2);
     const expected = await visit.getFirstVisitAndReferral('1');
