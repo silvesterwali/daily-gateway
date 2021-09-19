@@ -103,7 +103,6 @@ const workers = [
   {
     topic: 'gateway.changes',
     subscription: 'gateway-cdc',
-    endpoint: 'cdc',
     args: { enableMessageOrdering: true },
   }
 ];
