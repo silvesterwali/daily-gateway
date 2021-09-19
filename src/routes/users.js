@@ -14,14 +14,12 @@ import visit from '../models/visit';
 import { setSessionId, setTrackingId } from '../tracking';
 import config from '../config';
 import { setAuthCookie, addSubdomainOpts, getAmplitudeCookie } from '../cookies';
-import { publishEvent, userUpdatedTopic } from '../pubsub';
 import upload from '../upload';
 import { uploadAvatar } from '../cloudinary';
 import generateId from '../generateId';
 
 const updateUser = async (userId, user, newProfile) => {
   await userModel.update(userId, newProfile);
-  await publishEvent(userUpdatedTopic, { user, newProfile });
 };
 
 const router = Router({

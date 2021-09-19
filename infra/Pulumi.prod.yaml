@@ -1,4 +1,8 @@
 config:
+  gateway:debeziumDbPass:
+    secure: AAABADasS+yGoWNq1y7N57b7CJl9FwCg/mReVaO25YrwlX9s1Yq9HZpWH+oVUoWL
+  gateway:debeziumDbUser:
+    secure: AAABAD3UsX0N4DL09nVRVJZ2uM/6FaENmEOzbwj8XFNfLZxVb9KGuQ==
   gateway:env:
     accessSecret:
       secure: AAABAOgGOPp2psPjjfgQHY7iQdsYdarlUFcI2qUSUSDhljnLHuXjuQc0qDG0mRbgVI0dXFkX0aTlRZ5+68zacA==

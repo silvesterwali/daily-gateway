@@ -1,4 +1,4 @@
-import { messageToJson, participantEligilbleTopic, publishEvent } from '../pubsub';
+import { messageToJson } from '../pubsub';
 import userModel from '../models/user';
 import contestModel from '../models/contest';
 import visit from '../models/visit';
@@ -21,9 +21,6 @@ const worker = {
           const participant = await contestModel.getParticipant(contest.id, referredUser.id);
           if (participant.referrals >= 5 && !participant.eligible) {
             await contestModel.setParticipantAsEligible(contest.id, referredUser.id);
-            await publishEvent(participantEligilbleTopic, {
-              userId: referredUser.id, contestId: contest.id,
-            }, log);
           }
         }
       }

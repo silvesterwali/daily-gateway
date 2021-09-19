@@ -11,7 +11,6 @@ import { getTrackingId, setTrackingId } from '../tracking';
 import { ForbiddenError } from '../errors';
 import { generateChallenge } from '../auth';
 import { addSubdomainOpts, setAuthCookie } from '../cookies';
-import { publishEvent, userRegisteredTopic } from '../pubsub';
 
 const router = Router({
   prefix: '/auth',
@@ -86,7 +85,6 @@ const authenticateToken = async (ctx, redirectUri, providerName, providerCode) =
     if (user.referral) {
       ctx.log.info({ userId: user.id, referral: user.referral }, 'referred user registered');
     }
-    await publishEvent(userRegisteredTopic, user, ctx.log);
   }
 
   return {

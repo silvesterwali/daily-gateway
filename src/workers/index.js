@@ -4,6 +4,7 @@ import updateReputation from './updateReputation';
 import updateReferralContest from './updateReferralContest';
 import eligibleParticipantNotification from './eligibleParticipantNotification';
 import eligibleParticipantBoostChances from './eligibleParticipantBoostChances';
+import cdc from './cdc';
 
 const workers = [
   slackNotification,
@@ -12,6 +13,7 @@ const workers = [
   updateReferralContest,
   eligibleParticipantNotification,
   eligibleParticipantBoostChances,
+  cdc,
 ];
 
 export default workers;

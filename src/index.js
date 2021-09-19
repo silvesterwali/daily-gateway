@@ -102,6 +102,14 @@ app.use(router.routes(), router.allowedMethods());
 app.use(redirects.routes(), redirects.allowedMethods());
 app.use(premium.routes(), premium.allowedMethods());
 
+if (config.env !== 'production') {
+  app.use(proxy('/e', {
+    target: 'http://localhost:5004',
+    changeOrigin: true,
+    xfwd: true,
+  }));
+}
+
 app.use(proxy('/r', {
   target: config.apiUrl,
   changeOrigin: true,
