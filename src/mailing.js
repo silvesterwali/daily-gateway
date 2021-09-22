@@ -15,7 +15,10 @@ const profileToContact = (profile, contactId) => {
     if (name && name.length && name.length < 50) {
       const split = name.trim().split(' ');
       [contact.first_name] = split;
-      contact.last_name = split.slice(1).join(' ');
+      const lastName = split.slice(1).join(' ');
+      if (lastName.length) {
+        contact.last_name = lastName;
+      }
     }
   }
   if (contactId) {
