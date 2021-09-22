@@ -22,8 +22,13 @@ const worker = {
       }
       await updateUserContact(data.newProfile, data.user.email, lists);
     } catch (err) {
-      log.error({ messageId: message.id, err, userId: data.user.id }, 'failed to update user to mailing list');
-      throw err;
+      if (err.code === 400
+        && err.response?.body?.errors?.[0]?.message === 'length should be less than 50 chars') {
+        log.warn({ messageId: message.id, err, userId: data.user.id }, 'skipped updating user in mailing list');
+      } else {
+        log.error({ messageId: message.id, err, userId: data.user.id }, 'failed to update user in mailing list');
+        throw err;
+      }
     }
   },
 };
