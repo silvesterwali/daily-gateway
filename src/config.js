@@ -129,6 +129,13 @@ const config = {
     salt: process.env.REFRESH_TOKEN_SALT || 'salt',
   },
   amplitudeKey: process.env.AMPLITUDE_KEY || '',
+  flagsmithKey: process.env.FLAGSMITH_KEY || 'key',
+  flagsmithWebhookSecret: process.env.FLAGSMITH_WEBHOOK_SECRET || '',
+  redis: {
+    host: process.env.REDIS_HOST || 'localhost',
+    port: parseInt(process.env.REDIS_PORT, 10) || 6379,
+    password: process.env.REDIS_PASS,
+  },
 };
 
 export default config;

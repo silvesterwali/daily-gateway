@@ -48,6 +48,8 @@
     "@slack/webhook": "^6.0.0",
     "busboy": "^0.3.1",
     "cloudinary": "^1.26.2",
+    "flagsmith-nodejs": "^1.1.0",
+    "ioredis": "^4.27.9",
     "jsonwebtoken": "^8.3.0",
     "knex": "^0.95.7",
     "koa": "^2.13.1",

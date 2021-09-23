@@ -31,74 +31,38 @@ describe('users routes', () => {
   });
 
   describe('me', () => {
-    it('should return github profile', async () => {
-      nock('https://github.com')
-        .post('/login/oauth/access_token', (body) => body.code === 'code')
-        .reply(200, { access_token: 'token' });
+    let accessToken;
 
-      nock('https://api.github.com', {
-        reqheaders: {
-          Authorization: 'token token',
-          'User-Agent': 'Daily',
-        },
-      })
-        .get('/user/public_emails')
-        .reply(200, [{ email: 'email@foo.com' }]);
+    beforeEach(async () => {
+      await userModel.add('1', 'John', 'john@daily.dev', 'https://daily.dev/john.jpg');
+      await userModel.update('1', { username: 'john' });
+      await provider.add('1', 'github', 'github_id');
+      await refreshTokenModel.add('1', 'refresh');
+      accessToken = await sign({ userId: '1' }, null);
+    });
 
-      nock('https://api.github.com', {
-        reqheaders: {
-          Authorization: 'token token',
-          'User-Agent': 'Daily',
-        },
-      })
-        .get('/user')
-        .reply(200, { id: 'github_id', name: 'user', avatar_url: 'https://avatar.com' });
-
-      const verifier = 'verify';
-      const code = await sign({ providerCode: 'code', provider: 'github', codeChallenge: generateChallenge(verifier) });
-      const { body, headers } = await request
-        .post('/v1/auth/authenticate')
-        .send({ code: code.token, code_verifier: verifier })
-        .expect(200);
-
-      nock('https://api.github.com', {
-        reqheaders: {
-          Authorization: 'token token',
-          'User-Agent': 'Daily',
-        },
-      })
-        .get('/user/public_emails')
-        .reply(200, [{ email: 'email@foo.com' }]);
-
-      nock('https://api.github.com', {
-        reqheaders: {
-          Authorization: 'token token',
-          'User-Agent': 'Daily',
-        },
-      })
-        .get('/user')
-        .reply(200, { id: 'github_id', name: 'user', avatar_url: 'https://avatar.com' });
-
+    it('should return registered user profile', async () => {
       const res = await request
         .get('/v1/users/me')
-        .set('Cookie', headers['set-cookie'])
+        .set('Cookie', [`da3=${accessToken.token}`])
         .expect(200);
 
       delete res.body.createdAt;
       expect(res.body).to.deep.equal({
-        id: body.id,
+        id: '1',
         providers: ['github'],
-        name: 'user',
-        image: 'https://avatar.com',
-        email: 'email@foo.com',
+        name: 'John',
+        image: 'https://daily.dev/john.jpg',
+        email: 'john@daily.dev',
+        username: 'john',
         infoConfirmed: false,
         premium: false,
         acceptedMarketing: true,
         roles: [],
         reputation: 1,
-        permalink: `http://localhost:5002/${res.body.id}`,
+        permalink: 'http://localhost:5002/john',
         registrationLink: 'http://localhost:5002/register',
-        referralLink: `https://api.daily.dev/get?r=${res.body.id}`,
+        referralLink: 'https://api.daily.dev/get?r=john',
         visitId: res.body.visitId,
         sessionId: res.body.sessionId,
         firstVisit: res.body.firstVisit,
@@ -106,128 +70,53 @@ describe('users routes', () => {
     });
 
     it('should return profile with roles', async () => {
-      nock('https://github.com')
-        .post('/login/oauth/access_token', (body) => body.code === 'code')
-        .reply(200, { access_token: 'token' });
-
-      nock('https://api.github.com', {
-        reqheaders: {
-          Authorization: 'token token',
-          'User-Agent': 'Daily',
-        },
-      })
-        .get('/user/public_emails')
-        .reply(200, [{ email: 'email@foo.com' }]);
-
-      nock('https://api.github.com', {
-        reqheaders: {
-          Authorization: 'token token',
-          'User-Agent': 'Daily',
-        },
-      })
-        .get('/user')
-        .reply(200, { id: 'github_id', name: 'user', avatar_url: 'https://avatar.com' });
-
-      const verifier = 'verify';
-      const code = await sign({ providerCode: 'code', provider: 'github', codeChallenge: generateChallenge(verifier) });
-      const { body, headers } = await request
-        .post('/v1/auth/authenticate')
-        .send({ code: code.token, code_verifier: verifier })
-        .expect(200);
-
-      nock('https://api.github.com', {
-        reqheaders: {
-          Authorization: 'token token',
-          'User-Agent': 'Daily',
-        },
-      })
-        .get('/user/public_emails')
-        .reply(200, [{ email: 'email@foo.com' }]);
-
-      nock('https://api.github.com', {
-        reqheaders: {
-          Authorization: 'token token',
-          'User-Agent': 'Daily',
-        },
-      })
-        .get('/user')
-        .reply(200, { id: 'github_id', name: 'user', avatar_url: 'https://avatar.com' });
-
-      await role.add(body.id, 'admin');
-      await role.add(body.id, 'moderator');
-
-      const res = await request
-        .get('/v1/users/me')
-        .set('Cookie', headers['set-cookie'])
-        .expect(200);
-
-      delete res.body.createdAt;
-      expect(res.body).to.deep.equal({
-        id: body.id,
-        providers: ['github'],
-        name: 'user',
-        image: 'https://avatar.com',
-        email: 'email@foo.com',
-        infoConfirmed: false,
-        premium: false,
-        acceptedMarketing: true,
-        roles: ['admin', 'moderator'],
-        reputation: 1,
-        permalink: `http://localhost:5002/${res.body.id}`,
-        registrationLink: 'http://localhost:5002/register',
-        referralLink: `https://api.daily.dev/get?r=${res.body.id}`,
-        visitId: res.body.visitId,
-        sessionId: res.body.sessionId,
-        firstVisit: res.body.firstVisit,
-      });
-    });
-
-    it('should not refresh access token when refresh token is not available', async () => {
-      await userModel.add('id', 'John');
-      await provider.add('id', 'github', 'id');
-      const accessToken = await sign({ userId: 'id' }, null);
+      await role.add('1', 'admin');
+      await role.add('1', 'moderator');
 
       const res = await request
         .get('/v1/users/me')
         .set('Cookie', [`da3=${accessToken.token}`])
         .expect(200);
 
-      expect(res.body.accessToken).to.equal(undefined);
+      delete res.body.createdAt;
+      expect(res.body).to.deep.equal({
+        id: '1',
+        providers: ['github'],
+        name: 'John',
+        image: 'https://daily.dev/john.jpg',
+        email: 'john@daily.dev',
+        username: 'john',
+        infoConfirmed: false,
+        premium: false,
+        acceptedMarketing: true,
+        roles: ['admin', 'moderator'],
+        reputation: 1,
+        permalink: 'http://localhost:5002/john',
+        registrationLink: 'http://localhost:5002/register',
+        referralLink: 'https://api.daily.dev/get?r=john',
+        visitId: res.body.visitId,
+        sessionId: res.body.sessionId,
+        firstVisit: res.body.firstVisit,
+      });
     });
 
     it('should refresh access token when refresh token is available', async () => {
-      await userModel.add('id', 'John');
-      await provider.add('id', 'github', 'id');
-      await refreshTokenModel.add('id', 'refresh');
-
       const res = await request
         .get('/v1/users/me')
         .set('Cookie', ['da5=refresh'])
         .expect(200);
 
-      expect(res.body.accessToken).to.be.ok;
+      expect(res.body.accessToken).to.be.a('object');
     });
 
     it('should throw forbidden error when refresh token is not valid', async () => {
-      await userModel.add('id', 'John');
-      await provider.add('id', 'github', 'id');
-
       await request
         .get('/v1/users/me')
-        .set('Cookie', ['da5=refresh'])
+        .set('Cookie', ['da5=refresh2'])
         .expect(403);
     });
 
     it('should return first visit time and referral', async () => {
-      await db.insert({
-        id: '1',
-        name: 'John',
-        email: 'john@acme.com',
-        image: 'https://acme.com/john.png',
-        title: 'Developer',
-        company: 'ACME',
-        username: 'john',
-      }).into('users');
       const date1 = new Date('2020-01-21T21:44:16Z');
       const date2 = new Date('2020-01-21T21:45:16Z');
       await visit.upsert('123', 'app', date2, date1, '1', '');
@@ -247,15 +136,6 @@ describe('users routes', () => {
     });
 
     it('should return first visit time and referral when visit entry does not exist', async () => {
-      await db.insert({
-        id: '1',
-        name: 'John',
-        email: 'john@acme.com',
-        image: 'https://acme.com/john.png',
-        title: 'Developer',
-        company: 'ACME',
-        username: 'john',
-      }).into('users');
       const res = await request
         .get('/v1/users/me')
         .set('Cookie', ['da2=123;da4=john'])
@@ -271,15 +151,6 @@ describe('users routes', () => {
     });
 
     it('should add visit entry', async () => {
-      await db.insert({
-        id: '1',
-        name: 'John',
-        email: 'john@acme.com',
-        image: 'https://acme.com/john.png',
-        title: 'Developer',
-        company: 'ACME',
-        username: 'john',
-      }).into('users');
       await request
         .get('/v1/users/me')
         .set('App', 'extension')

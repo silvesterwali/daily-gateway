@@ -32,6 +32,7 @@ jobs:
         environment:
           MYSQL_DATABASE: test
           MYSQL_ROOT_PASSWORD: 12345
+      - image: redis:6
     steps:
       - checkout
       - restore_cache:

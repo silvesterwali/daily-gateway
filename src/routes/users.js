@@ -6,17 +6,14 @@ import validator, {
 } from 'koa-context-validator';
 import _ from 'lodash';
 import { ForbiddenError, ValidationError } from '../errors';
-import provider from '../models/provider';
 import userModel from '../models/user';
-import refreshTokenModel from '../models/refreshToken';
 import role from '../models/role';
-import visit from '../models/visit';
-import { setSessionId, setTrackingId } from '../tracking';
+import { setTrackingId } from '../tracking';
 import config from '../config';
-import { setAuthCookie, addSubdomainOpts, getAmplitudeCookie } from '../cookies';
+import { addSubdomainOpts } from '../cookies';
 import upload from '../upload';
 import { uploadAvatar } from '../cloudinary';
-import generateId from '../generateId';
+import { bootSharedLogic } from './boot';
 
 const updateUser = async (userId, user, newProfile) => {
   await userModel.update(userId, newProfile);
@@ -26,126 +23,17 @@ const router = Router({
   prefix: '/users',
 });
 
-const validateRefreshToken = async (ctx) => {
-  const refreshToken = ctx.cookies.get(config.cookies.refreshToken.key);
-  let shouldRefreshToken = false;
-  if (refreshToken) {
-    const refreshTokenObject = await refreshTokenModel.getByToken(refreshToken);
-    if (refreshTokenObject) {
-      shouldRefreshToken = true;
-      ctx.state.user = { userId: refreshTokenObject.userId };
-    } else {
-      throw new ForbiddenError();
-    }
-  }
-  return shouldRefreshToken;
-};
-
-const generateSessionId = (ctx) => {
-  if (!ctx.userAgent.isBot && !ctx.state.service) {
-    if (!ctx.sessionId || !ctx.sessionId.length) {
-      ctx.sessionId = generateId();
-    }
-    // Refresh session cookie
-    setSessionId(ctx, ctx.sessionId);
-  }
-};
-
-const updateUserVisit = async (ctx, now, referral, trackingId) => {
-  if (!trackingId) {
-    return;
-  }
-  const app = ctx.request.get('app');
-  if (app === 'extension' || app === 'web') {
-    const referrer = referral ? await userModel.getByIdOrUsername(referral) : {};
-    await visit.upsert(trackingId, app, now, now, referrer?.id, ctx.request.ip);
-  }
-};
-
-const getTimeOrMax = (time) => time?.getTime?.() || Number.MAX_VALUE;
-
-const getMeBaseResponse = async (ctx, visitId, visitPromise, now, referral, user = null) => {
-  const visitObject = visitPromise ? await visitPromise : null;
-  const baseResponse = {
-    ampStorage: getAmplitudeCookie(ctx),
-    visitId,
-    sessionId: ctx.sessionId,
-  };
-  if (visitObject) {
-    const firstVisitEpoch = Math.min(
-      getTimeOrMax(visitObject?.firstVisit),
-      getTimeOrMax(user?.createdAt),
-    );
-    return {
-      ...baseResponse,
-      firstVisit: firstVisitEpoch < Number.MAX_VALUE ? new Date(firstVisitEpoch) : undefined,
-      referrer: visitObject.referral,
-    };
-  }
-  if (referral) {
-    const referrer = await userModel.getByIdOrUsername(referral);
-    if (referrer) {
-      return {
-        ...baseResponse,
-        firstVisit: now,
-        referrer: referrer.id,
-      };
-    }
-  }
-  return {
-    ...baseResponse,
-    firstVisit: now,
-  };
-};
-
 router.get(
   '/me',
   async (ctx) => {
-    const shouldRefreshToken = await validateRefreshToken(ctx);
-    const trackingId = ctx.state?.user?.userId || ctx.trackingId;
-
-    const visitId = generateId();
-    generateSessionId(ctx);
-    const now = new Date();
-    const visitPromise = trackingId && visit.getFirstVisitAndReferral(trackingId);
-    const referral = ctx.cookies.get(config.cookies.referral.key, config.cookies.referral.opts);
-    if (ctx.state.user) {
-      const { userId } = ctx.state.user;
-
-      const [user, userProvider, roles] = await Promise.all([
-        userModel.getById(userId),
-        provider.getByUserId(userId),
-        role.getByUserId(userId),
-      ]);
-      if (!user) {
-        setTrackingId(ctx, null);
-        throw new ForbiddenError();
-      }
-
-      const accessToken = shouldRefreshToken ? await setAuthCookie(ctx, user, roles) : undefined;
-
-      ctx.status = 200;
-      ctx.body = {
-        ...user,
-        providers: [userProvider.provider],
-        roles,
-        permalink: `${config.webappOrigin}/${user.username || user.id}`,
-        accessToken,
-        ...(await getMeBaseResponse(ctx, visitId, visitPromise, now, referral, user)),
-      };
-      if (!user.infoConfirmed) {
-        ctx.body = {
-          ...ctx.body, registrationLink: `${config.webappOrigin}/register`,
-        };
-      }
-    } else {
-      ctx.status = 200;
-      const base = await getMeBaseResponse(ctx, visitId, visitPromise, now, referral);
-      ctx.body = { id: trackingId, ...base };
-    }
-
-    updateUserVisit(ctx, now, referral, trackingId)
-      .catch((err) => ctx.log.error({ err }, `failed to update visit for ${trackingId}`));
+    const base = await bootSharedLogic(ctx);
+    ctx.status = 200;
+    ctx.body = {
+      ...base.user,
+      ...base.visit,
+      accessToken: base.accessToken,
+      registrationLink: base.registrationLink,
+    };
   },
 );
 

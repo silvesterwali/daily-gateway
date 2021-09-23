@@ -1,11 +1,11 @@
 import * as gcp from '@pulumi/gcp';
-import {Output} from '@pulumi/pulumi';
+import {Input, Output} from '@pulumi/pulumi';
 import {
   CloudRunAccess,
-  config, createCloudRunService, createEnvVarsFromSecret,
+  config, createCloudRunService, createEncryptedEnvVar, createEnvVarsFromSecret,
   createK8sServiceAccountFromGCPServiceAccount, createMigrationJob,
   createServiceAccountAndGrantRoles, createSubscriptionsFromWorkers, deployDebeziumToKubernetes,
-  imageTag, infra, k8sServiceAccountToIdentity, location,
+  imageTag, infra, k8sServiceAccountToIdentity, location, Secret,
 } from '@dailydotdev/pulumi-common';
 import {readFile} from "fs/promises";
 
@@ -17,6 +17,18 @@ const debeziumTopic = new gcp.pubsub.Topic('debezium-topic', {
 });
 
 const vpcConnector = infra.getOutput('serverlessVPC') as Output<gcp.vpcaccess.Connector>;
+
+// Provision Redis (Memorystore)
+const redis = new gcp.redis.Instance(`${name}-redis`, {
+  name: `${name}-redis`,
+  tier: 'STANDARD_HA',
+  memorySizeGb: 10,
+  region: location,
+  authEnabled: true,
+  redisVersion: 'REDIS_6_X',
+});
+
+export const redisHost = redis.host;
 
 const {serviceAccount} = createServiceAccountAndGrantRoles(
   `${name}-sa`,
@@ -30,7 +42,12 @@ const {serviceAccount} = createServiceAccountAndGrantRoles(
   ],
 );
 
-const secrets = createEnvVarsFromSecret(name);
+const secrets: Input<Secret>[] = [
+  ...createEnvVarsFromSecret(name),
+  {name: 'REDIS_HOST', value: redisHost},
+  createEncryptedEnvVar(name, 'redisPass', redis.authString),
+  {name: 'REDIS_PORT', value: redis.port.apply((port) => port.toString())},
+];
 
 const image = `gcr.io/daily-ops/daily-${name}:${imageTag}`;
 
@@ -103,11 +120,14 @@ const workers = [
   {
     topic: 'gateway.changes',
     subscription: 'gateway-cdc',
-    args: { enableMessageOrdering: true },
-  }
+    args: {enableMessageOrdering: true},
+  },
+  {topic: 'features-reset', subscription: 'clear-features-cache'},
 ];
 
-createSubscriptionsFromWorkers(name, workers, bgServiceUrl, [debeziumTopic]);
+const topics = ['features-reset'].map((topic) => new gcp.pubsub.Topic(topic, {name: topic}));
+
+createSubscriptionsFromWorkers(name, workers, bgServiceUrl, [debeziumTopic, ...topics]);
 
 const envVars = config.requireObject<Record<string, string>>('env');
 
@@ -126,5 +146,5 @@ deployDebeziumToKubernetes(
   debeziumTopic,
   Output.create(getDebeziumProps()),
   `${location}-f`,
-  { diskType: 'pd-ssd', diskSize: 100, image: 'debezium/server:1.6' },
+  {diskType: 'pd-ssd', diskSize: 100, image: 'debezium/server:1.6'},
 );

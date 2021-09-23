@@ -1,3 +1,5 @@
+import nock from 'nock';
+
 function base64(i) {
   return Buffer.from(i, 'utf8').toString('base64');
 }
@@ -58,3 +60,20 @@ export const mockChangeMessage = ({
     transaction: 0,
   },
 });
+
+export const mockFeatureFlagForUser = (
+  featureName,
+  enabled,
+  value,
+) => nock('https://api.flagsmith.com')
+  .filteringPath(/identifier=[^&]*/g, 'identifier=XXX')
+  .get('/api/v1/identities/?identifier=XXX')
+  .reply(200, {
+    flags: [
+      {
+        feature: { name: featureName },
+        enabled,
+        feature_state_value: value,
+      },
+    ],
+  });

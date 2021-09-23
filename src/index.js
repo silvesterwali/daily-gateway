@@ -18,6 +18,8 @@ import users from './routes/users';
 import auth from './routes/auth';
 import premium from './routes/premium';
 import contests from './routes/referrals';
+import flagsmith from './routes/flagsmith';
+import boot from './routes/boot';
 
 const app = new Koa();
 
@@ -101,6 +103,8 @@ router.use(contests.routes(), contests.allowedMethods());
 app.use(router.routes(), router.allowedMethods());
 app.use(redirects.routes(), redirects.allowedMethods());
 app.use(premium.routes(), premium.allowedMethods());
+app.use(flagsmith.routes(), flagsmith.allowedMethods());
+app.use(boot.routes(), boot.allowedMethods());
 
 if (config.env !== 'production') {
   app.use(proxy('/e', {

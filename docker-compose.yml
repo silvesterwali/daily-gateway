@@ -2,6 +2,7 @@ version: "3"
 
 volumes:
   db:
+  redis:
 
 services:
   daily-mysql:
@@ -10,3 +11,10 @@ services:
       - "3306:3306"
     volumes:
       - db:/var/lib/mysql
+  redis:
+    image: redis:6
+    command: redis-server --appendonly yes
+    volumes:
+      - redis:/data
+    ports:
+      - "6380:6379"

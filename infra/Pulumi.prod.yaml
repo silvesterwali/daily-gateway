@@ -30,6 +30,10 @@ config:
       secure: AAABANqssCoeQV1T/2yY7ifRwbFSLJYVxQlUe1HfEdSegHSDrt6OKCq2JRDb2Xmczs8Uk5pUzKuG4ZSN0FlJ1Vg2DnGTH/pAA83oBHa92A==
     corsOrigin:
       secure: AAABAN5prznjc93/PzBfle8qSTzV7wuNKPhwTlakskgdg2wMIwaI/yNWhJnikV5OfhG9h4ep4l6Sb0cn2/gWpXMIVjola1W0RWX/g9OVgGs05wjjftUv3I8wDEPkOWajXOLbyVI/298z4Q18XoPCKdkZlYrh9hL+oZu3OkfbWoEbL/c7+H12JGx0ImI6435IvKP5CMWgyBX1OUdLaS30ww==
+    flagsmithKey:
+      secure: AAABAFHDj1ixQ7hPApOdaY+Ns752ixm4jlA+xPKqj1+ozCsIYtYSDE9zLeQ5cZUm3Ku+UQvJ
+    flagsmithWebhookSecret:
+      secure: AAABANSJyDKPzYw0reI0IkuL+8du17HRgqlspUqUdlTmcDJ+qluzR8VnsL5wpqgk
     githubClientId:
       secure: AAABACbheY5sozmUuMtYbrq8iV3hUqW5bHbVMaD93Hj40LiLzPJ3d6YeIJMqv5ZQBYmXBg==
     githubClientSecret:
@@ -75,5 +79,6 @@ config:
       secure: AAABAIqlleKQsN1FpB1M2kfuP7qap03jqkB+QfZP4EoApt+twCEs2nbqCT07ljv700WuVRs=
   gateway:k8s:
     namespace: daily
+  gateway:tag: 9e62a73edce2a7461ecf6782cf5b2fad1257342d
   gcp:project: devkit-prod
   gcp:region: us-central1
