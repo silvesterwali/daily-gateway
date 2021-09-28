@@ -1,3 +1,8 @@
+const defaultDotEnv = '.env';
+const customDotenv = process.env.NODE_ENV && `.env.${process.env.NODE_ENV}`;
+
+require('dotenv').config({ path: customDotenv || defaultDotEnv });
+
 const env = process.env.NODE_ENV || 'development';
 const port = Number.parseInt(process.env.PORT, 10) || 3000;
 

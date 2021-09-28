@@ -5,3 +5,7 @@ app.yaml
 local.sh
 prod.sh
 cron.yaml
+
+# local env files
+.env.development
+.env.*.development

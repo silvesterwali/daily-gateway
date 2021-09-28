@@ -12,7 +12,7 @@
     "test": "yarn run lint && BLUESNAP_IP='123.1.1.1,123.2.2.2' yarn run mocha",
     "build": "babel . -d build --source-maps --ignore build,node_modules,test && cp package.json yarn.lock ./build",
     "babel-node": "babel-node",
-    "watch": "nodemon --exec yarn run babel-node -- $npm_package_main | pino-pretty",
+    "watch": "cross-env NODE_ENV=development nodemon --exec yarn run babel-node -- $npm_package_main | pino-pretty",
     "start": "node $npm_package_main | pino-stackdriver",
     "db:migrate:latest": "yarn run knex migrate:latest"
   },
@@ -48,6 +48,8 @@
     "@slack/webhook": "^6.0.0",
     "busboy": "^0.3.1",
     "cloudinary": "^1.26.2",
+    "cross-env": "^7.0.3",
+    "dotenv": "^10.0.0",
     "flagsmith-nodejs": "^1.1.0",
     "ioredis": "^4.27.9",
     "jsonwebtoken": "^8.3.0",
