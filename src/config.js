@@ -1,9 +1,10 @@
-const defaultDotEnv = '.env';
-const customDotenv = process.env.NODE_ENV && `.env.${process.env.NODE_ENV}`;
-
-require('dotenv').config({ path: customDotenv || defaultDotEnv });
+import dotenv from 'dotenv';
 
 const env = process.env.NODE_ENV || 'development';
+
+dotenv.config({ path: `.env.${env}` });
+dotenv.config({ path: '.env' });
+
 const port = Number.parseInt(process.env.PORT, 10) || 3000;
 
 const getMysqlConfig = () => {

@@ -1,6 +1,7 @@
 import supertest from 'supertest';
 import { expect } from 'chai';
 import sinon from 'sinon';
+import knexCleaner from 'knex-cleaner';
 import app from '../../src/background';
 import worker from '../../src/workers/cdc';
 import * as pubsub from '../../src/pubsub';
@@ -8,6 +9,7 @@ import { expectSuccessfulBackground, mockChangeMessage } from '../helpers';
 import {
   participantEligilbleTopic, userDeletedTopic, userRegisteredTopic, userUpdatedTopic,
 } from '../../src/pubsub';
+import db, { migrate, toCamelCase } from '../../src/db';
 
 describe('cdc', () => {
   let request;
@@ -19,8 +21,10 @@ describe('cdc', () => {
     request = supertest(server);
   });
 
-  beforeEach(() => {
+  beforeEach(async () => {
     publishEventStub = sinon.stub(pubsub, 'publishEvent').returns(Promise.resolve());
+    await knexCleaner.clean(db, { ignoreTables: ['knex_migrations', 'knex_migrations_lock'] });
+    return migrate();
   });
 
   afterEach(() => {
@@ -35,43 +39,52 @@ describe('cdc', () => {
     id: '1',
     username: 'idoshamun',
     name: 'Ido Shamun',
-    created_at: new Date(2021, 9, 19).toISOString(),
-    updated_at: new Date(2021, 9, 19).toISOString(),
+    created_at: new Date(2021, 9, 19),
+    updated_at: new Date(2021, 9, 19),
   };
 
   it('should notify on a new user', async () => {
-    const after = {
-      ...baseUser,
-    };
+    await db.insert(baseUser).into('users');
+    const [user] = await db.select().from('users').where('id', '=', baseUser.id).limit(1);
     await expectSuccessfulBackground(
       request,
       worker,
       mockChangeMessage({
-        after,
+        after: user,
         op: 'c',
         table: 'users',
       }),
     );
-    expect(publishEventStub.calledWith(userRegisteredTopic, after)).to.be.ok;
+    expect(publishEventStub.calledWith(userRegisteredTopic, toCamelCase(user))).to.be.ok;
   });
 
   it('should notify on user update', async () => {
+    await db.insert(baseUser).into('users');
+    const [user] = await db.select().from('users').where('id', '=', baseUser.id).limit(1);
     const after = {
-      ...baseUser,
+      ...user,
       name: 'Ido',
     };
+    await db('users').update({ name: after.name }).where('id', '=', baseUser.id);
     await expectSuccessfulBackground(
       request,
       worker,
       mockChangeMessage({
-        before: baseUser,
+        before: user,
         after,
         op: 'u',
         table: 'users',
       }),
     );
     expect(publishEventStub.calledWith(userUpdatedTopic,
-      { user: baseUser, newProfile: after })).to.be.ok;
+      {
+        user: toCamelCase({
+          ...user,
+          created_at: user.created_at.toISOString(),
+          updated_at: user.updated_at.toISOString(),
+        }),
+        newProfile: toCamelCase(after),
+      })).to.be.ok;
   });
 
   it('should notify on user deleted', async () => {
@@ -84,7 +97,11 @@ describe('cdc', () => {
         table: 'users',
       }),
     );
-    expect(publishEventStub.calledWith(userDeletedTopic, baseUser)).to.be.ok;
+    expect(publishEventStub.calledWith(userDeletedTopic, toCamelCase({
+      ...baseUser,
+      created_at: baseUser.created_at.toISOString(),
+      updated_at: baseUser.updated_at.toISOString(),
+    }))).to.be.ok;
   });
 
   const baseParticipant = {
