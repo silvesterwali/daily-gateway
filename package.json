@@ -14,7 +14,7 @@
     "babel-node": "babel-node",
     "watch": "cross-env NODE_ENV=development nodemon --exec yarn run babel-node -- $npm_package_main | pino-pretty",
     "start": "node $npm_package_main | pino-stackdriver",
-    "db:migrate:latest": "yarn run knex migrate:latest"
+    "db:migrate:latest": "node -r dotenv/config ./node_modules/knex/bin/cli.js migrate:latest"
   },
   "repository": {
     "type": "git",
