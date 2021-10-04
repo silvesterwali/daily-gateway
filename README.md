@@ -44,7 +44,7 @@ Now, this service is focused on user management. Registration, login, logout, re
 Daily Gateway requires a running instance of MySQL.
 
 Make sure to apply the latest migrations by running:
-`yarn knex:migrate:latest`
+`yarn db:migrate:latest`
 
 Check out the [config.js](https://github.com/dailydotdev/daily-gateway/blob/master/src/config.js) file to see the environment variables list.
 Some of the variables have a default value preconfigured.
