@@ -22,7 +22,7 @@ const vpcConnector = infra.getOutput('serverlessVPC') as Output<gcp.vpcaccess.Co
 const redis = new gcp.redis.Instance(`${name}-redis`, {
   name: `${name}-redis`,
   tier: 'STANDARD_HA',
-  memorySizeGb: 10,
+  memorySizeGb: 3,
   region: location,
   authEnabled: true,
   redisVersion: 'REDIS_6_X',
