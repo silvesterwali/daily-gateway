@@ -10,6 +10,7 @@ import role from '../models/role';
 import { setSessionId, setTrackingId } from '../tracking';
 import { ForbiddenError } from '../errors';
 import { getAmplitudeCookie, setAuthCookie } from '../cookies';
+import { getAlerts } from '../redis';
 
 const router = Router({
   prefix: '/boot',
@@ -155,14 +156,16 @@ const getFeaturesForUser = async (ctx) => {
 };
 
 router.get('/', async (ctx) => {
-  const [flags, base] = await Promise.all([
+  const [flags, base, alerts] = await Promise.all([
     getFeaturesForUser(ctx),
     bootSharedLogic(ctx),
+    getAlerts(ctx),
   ]);
   ctx.status = 200;
   ctx.body = {
     ...base,
     flags,
+    alerts,
   };
 });
 

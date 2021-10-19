@@ -3,7 +3,7 @@ import supertest from 'supertest';
 import nock from 'nock';
 import { expect } from 'chai';
 import db, { migrate } from '../../../src/db';
-import { deleteKeysByPattern } from '../../../src/redis';
+import redis, { deleteKeysByPattern, getAlertsKey, ALERTS_DEFAULT } from '../../../src/redis';
 import app from '../../../src';
 import { sign } from '../../../src/jwt';
 import { mockFeatureFlagForUser } from '../../helpers';
@@ -12,6 +12,9 @@ import userModel from '../../../src/models/user';
 import provider from '../../../src/models/provider';
 import refreshTokenModel from '../../../src/models/refreshToken';
 import visit from '../../../src/models/visit';
+import config from '../../../src/config';
+
+const mustContainKeysRegex = (keys) => `^${keys.map((key) => `(?=.*\\b${key}\\b)`).join('')}.*$`;
 
 describe('boot routes', () => {
   let request;
@@ -21,6 +24,7 @@ describe('boot routes', () => {
   beforeEach(async () => {
     await knexCleaner.clean(db, { ignoreTables: ['knex_migrations', 'knex_migrations_lock'] });
     await deleteKeysByPattern('features:*');
+    await deleteKeysByPattern('alerts:*');
     await userModel.add('1', 'John', 'john@daily.dev', 'https://daily.dev/john.jpg');
     await userModel.update('1', { username: 'john' });
     await provider.add('1', 'github', 'github_id');
@@ -36,6 +40,45 @@ describe('boot routes', () => {
 
   after(() => {
     server.close();
+  });
+
+  it('should return alerts.filter as true if user is not logged in', async () => {
+    const res = await request
+      .get('/boot')
+      .expect(200);
+
+    expect(res.body.alerts.filter).to.be.equals(true);
+  });
+
+  it('should return alerts value accurately from cache', async () => {
+    const expected = { ...ALERTS_DEFAULT, filter: false };
+    const key = getAlertsKey('1');
+
+    await redis.set(key, JSON.stringify(expected));
+
+    const res = await request
+      .get('/boot')
+      .set('Cookie', [`da3=${accessToken.token}`])
+      .expect(200);
+
+    expect(res.body.alerts).to.deep.equal(expected);
+  });
+
+  it('should return alerts value from api if cache is empty', async () => {
+    const expected = { ...ALERTS_DEFAULT, filter: false };
+    const requiredQueryKeys = ['userAlerts', 'filter'];
+    const queryRegExp = new RegExp(mustContainKeysRegex(requiredQueryKeys));
+
+    nock(config.apiUrl)
+      .post('/graphql', queryRegExp)
+      .reply(200, `{ "data": { "userAlerts": ${JSON.stringify(expected)} } }`);
+
+    const res = await request
+      .get('/boot')
+      .set('Cookie', [`da3=${accessToken.token}`])
+      .expect(200);
+
+    expect(res.body.alerts).to.deep.equal(expected);
   });
 
   it('should return registered user profile', async () => {
@@ -73,6 +116,9 @@ describe('boot routes', () => {
         feat_limit_dev_card: {
           enabled: false,
         },
+      },
+      alerts: {
+        filter: true,
       },
     });
   });
@@ -115,6 +161,9 @@ describe('boot routes', () => {
         feat_limit_dev_card: {
           enabled: false,
         },
+      },
+      alerts: {
+        filter: true,
       },
     });
   });
@@ -162,6 +211,9 @@ describe('boot routes', () => {
           enabled: false,
         },
       },
+      alerts: {
+        filter: true,
+      },
     });
   });
 
@@ -188,6 +240,9 @@ describe('boot routes', () => {
           enabled: false,
         },
       },
+      alerts: {
+        filter: true,
+      },
     });
   });
 
@@ -212,6 +267,9 @@ describe('boot routes', () => {
         firstVisit: res.body.user.firstVisit,
       },
       flags: null,
+      alerts: {
+        filter: true,
+      },
     });
   });
 

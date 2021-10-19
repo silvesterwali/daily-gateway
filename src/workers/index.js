@@ -6,6 +6,7 @@ import eligibleParticipantNotification from './eligibleParticipantNotification';
 import eligibleParticipantBoostChances from './eligibleParticipantBoostChances';
 import cdc from './cdc';
 import clearFeaturesCache from './clearFeaturesCache';
+import updateAlerts from './updateAlerts';
 
 const workers = [
   slackNotification,
@@ -16,6 +17,7 @@ const workers = [
   eligibleParticipantBoostChances,
   cdc,
   clearFeaturesCache,
+  updateAlerts,
 ];
 
 export default workers;

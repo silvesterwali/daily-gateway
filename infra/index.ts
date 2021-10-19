@@ -111,6 +111,7 @@ export const serviceUrl = service.statuses[0].url;
 export const bgServiceUrl = bgService.statuses[0].url;
 
 const workers = [
+  {topic: 'alerts-updated', subscription: 'alerts-updated-redis'},
   {topic: 'user-updated', subscription: 'user-updated-mailing'},
   {topic: 'user-registered', subscription: 'user-registered-slack'},
   {topic: 'user-reputation-updated', subscription: 'update-reputation'},
