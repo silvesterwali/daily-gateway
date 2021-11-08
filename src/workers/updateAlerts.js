@@ -6,7 +6,8 @@ const handler = async (message, log) => {
     const data = messageToJson(message);
     const key = getAlertsKey(data.userId);
 
-    setRedisAlerts(key, data);
+    log.info({ messageId: message.messageId, data }, 'alerts data from pubsub');
+    await setRedisAlerts(key, data);
   } catch (err) {
     log.error(
       { messageId: message.messageId, err },
