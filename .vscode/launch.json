@@ -1,0 +1,12 @@
+{
+  "version": "0.2.0",
+  "configurations": [{
+    "type": "node",
+    "request": "launch",
+    "name": "Node: Nodemon",
+    "runtimeVersion": "14.13.1",
+    "runtimeExecutable": "yarn",
+    "runtimeArgs": ["run", "watch"],
+    "outputCapture": "std",
+  }],
+}
