@@ -14,6 +14,7 @@ import { addSubdomainOpts } from '../cookies';
 import upload from '../upload';
 import { uploadAvatar } from '../cloudinary';
 import { bootSharedLogic } from './boot';
+import { validateRefreshToken } from '../auth';
 
 const updateUser = async (userId, user, newProfile) => {
   await userModel.update(userId, newProfile);
@@ -26,7 +27,8 @@ const router = Router({
 router.get(
   '/me',
   async (ctx) => {
-    const base = await bootSharedLogic(ctx);
+    const shouldRefreshToken = await validateRefreshToken(ctx);
+    const base = await bootSharedLogic(ctx, shouldRefreshToken);
     ctx.status = 200;
     ctx.body = {
       ...base.user,

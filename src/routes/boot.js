@@ -83,8 +83,7 @@ const bootBaseResponse = async (ctx, visitId, visitPromise, now, referral, user 
 
 const getTrackingId = (ctx) => ctx.state?.user?.userId || ctx.trackingId;
 
-export const bootSharedLogic = async (ctx) => {
-  const shouldRefreshToken = await validateRefreshToken(ctx);
+export const bootSharedLogic = async (ctx, shouldRefreshToken) => {
   const trackingId = getTrackingId(ctx);
 
   const visitId = generateId();
@@ -156,9 +155,10 @@ const getFeaturesForUser = async (ctx) => {
 };
 
 router.get('/', async (ctx) => {
+  const shouldRefreshToken = await validateRefreshToken(ctx);
   const [flags, base, alerts] = await Promise.all([
     getFeaturesForUser(ctx),
-    bootSharedLogic(ctx),
+    bootSharedLogic(ctx, shouldRefreshToken),
     getAlerts(ctx),
   ]);
   ctx.status = 200;
