@@ -79,6 +79,6 @@ config:
       secure: AAABAIqlleKQsN1FpB1M2kfuP7qap03jqkB+QfZP4EoApt+twCEs2nbqCT07ljv700WuVRs=
   gateway:k8s:
     namespace: daily
-  gateway:tag: 9e62a73edce2a7461ecf6782cf5b2fad1257342d
+  gateway:tag: 0e1f2fe09f7685502286704b6e6c198433d93176
   gcp:project: devkit-prod
   gcp:region: us-central1
