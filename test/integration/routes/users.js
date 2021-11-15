@@ -311,6 +311,36 @@ describe('users routes', () => {
       });
     });
 
+    it('should update the logged-in user timezone', async () => {
+      await userModel.add('id', 'John');
+      const accessToken = await sign({ userId: 'id' }, null);
+
+      const res = await request
+        .put('/v1/users/me')
+        .set('Cookie', [`da3=${accessToken.token}`])
+        .set('Content-Type', 'application/json')
+        .send({
+          name: 'John', email: 'john@acme.com', company: 'ACME', title: 'Developer', username: 'john', timezone: 'Pacific/Midway',
+        })
+        .expect(200);
+
+      delete res.body.createdAt;
+      expect(res.body).to.deep.equal({
+        id: 'id',
+        name: 'John',
+        email: 'john@acme.com',
+        company: 'ACME',
+        title: 'Developer',
+        infoConfirmed: true,
+        premium: false,
+        acceptedMarketing: true,
+        reputation: 1,
+        referralLink: 'https://api.daily.dev/get?r=id',
+        username: 'john',
+        timezone: 'Pacific/Midway',
+      });
+    });
+
     it('should discard "at" sign prefix from handles', async () => {
       await userModel.add('id', 'John');
       const accessToken = await sign({ userId: 'id' }, null);

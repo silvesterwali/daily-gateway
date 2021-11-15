@@ -54,6 +54,7 @@ router.put(
       twitter: string().allow(null).regex(/^@?(\w){1,15}$/),
       github: string().allow(null).regex(/^@?([\w-]){1,39}$/i),
       hashnode: string().allow(null).regex(/^@?([\w-]){1,39}$/i),
+      timezone: string().allow(null).max(50),
       portfolio: string().allow(null),
     }),
   }, { stripUnknown: true }),
@@ -189,7 +190,7 @@ router.get(
       return;
     }
     ctx.status = 200;
-    ctx.body = _.pick(user, ['id', 'name', 'image', 'premium', 'username', 'bio', 'twitter', 'github', 'hashnode', 'portfolio', 'reputation', 'createdAt']);
+    ctx.body = _.pick(user, ['id', 'name', 'image', 'premium', 'username', 'bio', 'twitter', 'github', 'hashnode', 'timezone', 'portfolio', 'reputation', 'createdAt']);
   },
 );
 

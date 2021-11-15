@@ -61,6 +61,22 @@ describe('user model', () => {
     });
   });
 
+  it('should update users timezone', async () => {
+    await user.add(fixture[3].id);
+    await user.update(fixture[3].id, fixture[3]);
+    const model = await user.getById(fixture[3].id);
+    delete model.createdAt;
+    expect(model).to.deep.equal({
+      ...fixture[3],
+      infoConfirmed: false,
+      premium: false,
+      acceptedMarketing: true,
+      reputation: 1,
+      referralLink: 'https://api.daily.dev/get?r=4',
+      timezone: 'Pacific/Midway',
+    });
+  });
+
   it('should update user reputation', async () => {
     await user.add(fixture[2].id);
     await user.updateReputation(fixture[2].id, 2);
